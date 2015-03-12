@@ -84,7 +84,7 @@ public class GitLogParser {
    * 2c815939f45fbcfda9583f84b14fe9d393ada790<ITEM_SEPARATOR>sample commit<RECORD_END>
    * D       a.txt
    */
-  private static final Pattern ONE_RECORD = Pattern.compile(RECORD_START + "?(.*)" + RECORD_END + "\n*(.*)", Pattern.DOTALL);
+  private static final Pattern ONE_RECORD = Pattern.compile(String.format("%1$s?([^%2$s]*)%2$s\n*([^%1$s]*)", RECORD_START, RECORD_END));
   private static final String SINGLE_PATH = "([^\t\r\n]+)"; // something not empty, not a tab or newline.
   private static final String EOL = "\\s*(?:\r|\n|\r\n)";
   private static final String PATHS =
@@ -166,12 +166,10 @@ public class GitLogParser {
     // ^b71477e9738168aa67a8d41c414f284255f81e8a#moved out$
     //
     // R100    dir/anew.txt    anew.txt
-    final List<String> records = StringUtil.split(output, RECORD_START); // split by START, because END is the end of information, but not the end of the record: file status and path follow.
-    final List<GitLogRecord> res = new ArrayList<GitLogRecord>(records.size());
-    for (String record : records) {
-      if (!record.trim().isEmpty()) {  // record[0] is empty for sure, because we're splitting on RECORD_START. Just to play safe adding the check for all records.
-        res.add(parseOneRecord(record));
-      }
+    Matcher matcher = ONE_RECORD.matcher(output);
+    final List<GitLogRecord> res = new ArrayList<GitLogRecord>();
+    while(matcher.find()) {
+      res.add(parseOneRecord(matcher.group()));
     }
     return res;
   }
